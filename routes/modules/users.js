@@ -26,10 +26,33 @@ router.get('/register', (req, res) => {
 
 router.post('/register', (req, res) => {
   const { name, email, password, confirmPassword } = req.body
+
+  const errors = []
+
+  if (!name || !email || !password || !confirmPassword) {
+    errors.push({ message: 'All slot are required!' })
+  }
+
+  if (password !== confirmPassword) {
+    errors.push({ message: 'Password confirmation are not the same!' })
+  }
+
+  if (errors.length) {
+    return res.render('register', {
+      errors,
+      name,
+      email,
+      password,
+      confirmPassword
+    })
+  }
+
   User.findOne({ where: { email } }).then(user => {
     if (user) {
-      console.log('User already exists')
+      errors.push({ message: 'This email is already been registered!' })
+
       return res.render('register', {
+        errors,
         name,
         email,
         password,
