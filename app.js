@@ -1,63 +1,44 @@
 const express = require('express')
+const app = express()
+const PORT = 3000
+
 const exphbs = require('express-handlebars')
 // const bodyParser = require('body-parser')
 const methodOverride = require('method-override')
 const bcrypt = require('bcryptjs')
+const routes = require('./routes/index')
 
-const app = express()
-const PORT = 3000
+const session = require('express-session')
+const usePassport = require('./config/passport')
+const passport = require('passport')
 
-const db = require('./models')
-const Todo = db.Todo
-const User = db.User
+
+app.use(session({
+  secret: 'sequelizeSecret',
+  resave: false,
+  saveUninitialized: true
+}))
+
 
 app.engine('hbs', exphbs({ defaultLayout: 'main', extname: '.hbs' }))
 app.set('view engine', 'hbs')
 app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
 
-//home 路由
-app.get('/', (req, res) => {
-  return Todo.findAll({
-    raw: true,
-    nest: true
-  })
-    .then((todos) => { return res.render('index', { todos: todos }) })
-    .catch((error) => { return res.status(422).json(error) })
+usePassport(app)
+
+app.use((req, res, next) => {
+  // console.log(req.user)
+  res.locals.isAuthenticated = req.isAuthenticated
+  res.locals.user = req.user
+  // res.locals.success_msg = req.flash('success_msg')
+  // res.locals.warning_msg = req.flash('warning_msg')
+  // res.locals.error = req.flash('error')
+
+  next()
 })
 
-//單筆資料路由
-app.get('/todos/:id', (req, res) => {
-  const id = req.params.id
-  return Todo.findByPk(id)
-    .then(todo => res.render('detail', { todo: todo.toJSON() }))
-    .catch(error => console.log(error))
-})
-
-app.get('/users/login', (req, res) => {
-  res.render('login')
-})
-
-app.post('/users/login', (req, res) => {
-  res.send('login')
-})
-
-app.get('/users/register', (req, res) => {
-  res.render('register')
-})
-
-app.post('/users/register', (req, res) => {
-  const { name, email, password, confirmPassword } = req.body
-  User.create({ name, email, password })
-    .then(user => res.redirect('/'))
-  // res.send('register')
-})
-
-app.get('/users/logout', (req, res) => {
-  res.send('logout')
-})
-
-
+app.use(routes)
 
 //監聽
 app.listen(PORT, () => {
