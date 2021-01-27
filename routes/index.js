@@ -9,9 +9,12 @@ const users = require('./modules/users')  // 從 users.js 引進
 const { authenticator } = require('../middleware/auth')
 
 // home 根目錄要放在最後面，避免 auth 檢查時不斷重複的重新引導 login page
-router.use('/todos', todos)   // 引進的 router 不需要再加上 /todos 的位置
+router.use('/todos', authenticator, todos)   // 引進的 router 不需要再加上 /todos 的位置
 router.use('/users', users)
 // router.use('/auth', auth)
-router.use('/', home)
+router.use('/', authenticator, home)
+
+
+
 
 module.exports = router
